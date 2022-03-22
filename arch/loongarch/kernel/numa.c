@@ -352,6 +352,7 @@ static void __init init_node_memblock(void)
 			mem_start = PFN_ALIGN(mem_start);
 			mem_end = PFN_ALIGN(mem_end - PAGE_SIZE + 1);
 			memblock_add(mem_start, mem_size);
+			memblock_mark_nomap(mem_start, mem_size);
 			add_numamem_region(mem_start, mem_end);
 			fallthrough;
 		case ADDRESS_TYPE_RESERVED:

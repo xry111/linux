@@ -19,8 +19,8 @@ void __init fw_init_cmdline(void)
 	int i;
 
 	fw_argc = fw_arg0;
-	_fw_argv = (long *)early_memremap_ro(fw_arg1, SZ_16K);
-	_fw_envp = (long *)early_memremap_ro(fw_arg2, SZ_64K);
+	_fw_argv = (long *)fw_arg1;
+	_fw_envp = (long *)fw_arg2;
 
 	arcs_cmdline[0] = '\0';
 	for (i = 1; i < fw_argc; i++) {

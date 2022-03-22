@@ -204,7 +204,7 @@ void loongson3_boot_secondary(int cpu, struct task_struct *idle)
 
 	pr_info("Booting CPU#%d...\n", cpu);
 
-	entry = __pa_symbol((unsigned long)&smpboot_entry);
+	entry = (unsigned long)&smpboot_entry;
 	cpuboot_data.stack = (unsigned long)__KSTK_TOS(idle);
 	cpuboot_data.thread_info = (unsigned long)task_thread_info(idle);
 

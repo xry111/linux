@@ -70,6 +70,7 @@ void __init fw_init_memory(void)
 			num_physpages += (mem_size >> PAGE_SHIFT);
 			memblock_add(mem_start, mem_size);
 			memblock_set_node(mem_start, mem_size, &memblock.memory, 0);
+			memblock_mark_nomap(mem_start, mem_size);
 			fallthrough;
 		case ADDRESS_TYPE_RESERVED:
 			memblock_reserve(mem_start, mem_size);

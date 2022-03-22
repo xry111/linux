@@ -35,27 +35,23 @@ struct _extention_list_hdr {
 	u32	length;
 	u8	revision;
 	u8	checksum;
-	u64	next_offset;
+	struct _extention_list_hdr *next;
 } __packed;
 
 struct boot_params {
 	u64	signature;	/* {"B", "P", "I", "0", "1", ... } */
 	void	*systemtable;
-	u64	extlist_offset;
+	struct _extention_list_hdr *extlist;
 	u64	flags;
 } __packed;
 
 struct loongsonlist_mem_map {
 	struct	_extention_list_hdr header;	/* {"M", "E", "M"} */
 	u8	map_count;
-	u32	desc_version;
-	struct efi_mmap {
+	struct loongson_mmap {
 		u32 mem_type;
-		u32 padding;
 		u64 mem_start;
-		u64 mem_vaddr;
 		u64 mem_size;
-		u64 attribute;
 	} __packed map[LOONGSON3_BOOT_MEM_MAP_MAX];
 } __packed;
 

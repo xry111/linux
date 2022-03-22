@@ -7,7 +7,6 @@
 #include <linux/export.h>
 #include <linux/acpi.h>
 #include <linux/efi.h>
-#include <asm/early_ioremap.h>
 #include <asm/fw.h>
 #include <asm/time.h>
 #include <asm/bootinfo.h>
@@ -67,8 +66,7 @@ static int parse_vbios(struct _extention_list_hdr *head)
 		return -EPERM;
 	}
 
-	loongson_sysconf.vgabios_addr =
-		(u64)early_memremap_ro(pvbios->vbios_addr, 64);
+	loongson_sysconf.vgabios_addr = pvbios->vbios_addr;
 
 	return 0;
 }
@@ -90,17 +88,15 @@ static int parse_screeninfo(struct _extention_list_hdr *head)
 
 static int parse_extlist(struct boot_params *bp)
 {
-	unsigned long next_offset;
 	struct _extention_list_hdr *fhead;
 
-	fhead = (struct _extention_list_hdr *)((void *)bp + bp->extlist_offset);
+	fhead = bp->extlist;
 	if (fhead == NULL) {
-		pr_warn("the ext struct is empty!\n");
+		pr_warn("the link is empty!\n");
 		return -1;
 	}
 
 	do {
-		next_offset = fhead->next_offset;
 		if (memcmp(&(fhead->signature), LOONGSON_MEM_SIGNATURE, 3) == 0) {
 			if (parse_mem(fhead) != 0) {
 				pr_warn("parse mem failed\n");
@@ -117,8 +113,8 @@ static int parse_extlist(struct boot_params *bp)
 				return -EPERM;
 			}
 		}
-		fhead = (struct _extention_list_hdr *)((void *)bp + next_offset);
-	} while (next_offset);
+		fhead = fhead->next;
+	} while (fhead);
 
 	return 0;
 }

@@ -24,6 +24,7 @@
 #include <linux/hardirq.h>
 #include <linux/gfp.h>
 #include <linux/initrd.h>
+#include <linux/memremap.h>
 #include <linux/mmzone.h>
 
 #include <asm/asm-offsets.h>

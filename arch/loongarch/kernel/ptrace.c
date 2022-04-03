@@ -29,7 +29,6 @@
 #include <linux/smp.h>
 #include <linux/stddef.h>
 #include <linux/seccomp.h>
-#include <linux/tracehook.h>
 #include <linux/uaccess.h>
 
 #include <asm/byteorder.h>

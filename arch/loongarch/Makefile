@@ -5,6 +5,8 @@
 
 boot	:= arch/loongarch/boot
 
+KBUILD_DEFCONFIG := loongson3_defconfig
+
 ifndef CONFIG_SYS_SUPPORTS_ZBOOT
 
 ifndef CONFIG_EFI_STUB

@@ -122,6 +122,16 @@ static int apply_r_larch_sop_push_plt_pcrel(struct module *mod, u32 *location, E
 	return apply_r_larch_sop_push_pcrel(mod, location, v, rela_stack, rela_stack_top, type);
 }
 
+static int apply_r_larch_sop_push_gprel(struct module *mod, u32 *location,
+			Elf_Addr v, s64 *rela_stack, size_t *rela_stack_top,
+			unsigned int type)
+{
+	Elf_Addr got = module_emit_got_entry(mod, v);
+	ptrdiff_t offset = (void *)got - (void *)mod->arch.got.shdr->sh_addr;
+
+	return rela_stack_push(offset, rela_stack, rela_stack_top);
+}
+
 static int apply_r_larch_sop(struct module *mod, u32 *location, Elf_Addr v,
 			s64 *rela_stack, size_t *rela_stack_top, unsigned int type)
 {
@@ -306,6 +316,7 @@ static reloc_rela_handler reloc_rela_handlers[] = {
 	[R_LARCH_SOP_PUSH_PCREL]			     = apply_r_larch_sop_push_pcrel,
 	[R_LARCH_SOP_PUSH_ABSOLUTE]			     = apply_r_larch_sop_push_absolute,
 	[R_LARCH_SOP_PUSH_DUP]				     = apply_r_larch_sop_push_dup,
+	[R_LARCH_SOP_PUSH_GPREL]			     = apply_r_larch_sop_push_gprel,
 	[R_LARCH_SOP_PUSH_PLT_PCREL]			     = apply_r_larch_sop_push_plt_pcrel,
 	[R_LARCH_SOP_SUB ... R_LARCH_SOP_IF_ELSE] 	     = apply_r_larch_sop,
 	[R_LARCH_SOP_POP_32_S_10_5 ... R_LARCH_SOP_POP_32_U] = apply_r_larch_sop_imm_field,

@@ -40,10 +40,7 @@ endif
 
 cflags-y			+= -G0 -pipe -msoft-float
 LDFLAGS_vmlinux			+= -G0 -static -n -nostdlib
-KBUILD_AFLAGS_KERNEL		+= -Wa,-mla-global-with-pcrel
-KBUILD_CFLAGS_KERNEL		+= -Wa,-mla-global-with-pcrel
-KBUILD_AFLAGS_MODULE		+= -Wa,-mla-global-with-abs
-KBUILD_CFLAGS_MODULE		+= -fplt -Wa,-mla-global-with-abs,-mla-local-with-abs
+KBUILD_CFLAGS_MODULE		+= -fplt
 
 cflags-y += -ffreestanding
 cflags-y += $(call cc-option, -mno-check-zero-division)

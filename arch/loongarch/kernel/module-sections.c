@@ -76,12 +76,20 @@ static void count_max_entries(Elf_Rela *relas, int num,
 
 	for (i = 0; i < num; i++) {
 		type = ELF_R_TYPE(relas[i].r_info);
-		if (type == R_LARCH_SOP_PUSH_PLT_PCREL) {
+		switch (type) {
+		case R_LARCH_SOP_PUSH_PLT_PCREL:
+		case R_LARCH_B26:
 			if (!duplicate_rela(relas, i))
 				(*plts)++;
-		} else if (type == R_LARCH_SOP_PUSH_GPREL)
+			break;
+		case R_LARCH_SOP_PUSH_GPREL:
+		case R_LARCH_GOT_PC_HI20:
 			if (!duplicate_rela(relas, i))
 				(*gots)++;
+			break;
+		default:
+			/* Do nothing. */
+		}
 	}
 }
 

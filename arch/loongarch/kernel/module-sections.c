@@ -156,9 +156,9 @@ int module_frob_arch_sections(Elf_Ehdr *ehdr, Elf_Shdr *sechdrs,
 	mod->arch.got.shdr->sh_type = SHT_NOBITS;
 	mod->arch.got.shdr->sh_flags = SHF_ALLOC;
 	mod->arch.got.shdr->sh_addralign = L1_CACHE_BYTES;
-	mod->arch.got.shdr->sh_size = (num_plts + 1) * sizeof(struct plt_entry);
+	mod->arch.got.shdr->sh_size = (num_gots + 1) * sizeof(struct got_entry);
 	mod->arch.got.num_entries = 0;
-	mod->arch.got.max_entries = num_plts;
+	mod->arch.got.max_entries = num_gots;
 
 	return 0;
 }

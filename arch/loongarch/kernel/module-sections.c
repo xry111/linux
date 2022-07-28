@@ -97,9 +97,6 @@ int module_frob_arch_sections(Elf_Ehdr *ehdr, Elf_Shdr *sechdrs,
 			      char *secstrings, struct module *mod)
 {
 	unsigned int i, num_plts = 0, num_gots = 0;
-	Elf_Shdr *symtab = NULL;
-	Elf_Sym *symbols;
-	char *strings;
 
 	/*
 	 * Find the empty .plt sections.
@@ -111,8 +108,6 @@ int module_frob_arch_sections(Elf_Ehdr *ehdr, Elf_Shdr *sechdrs,
 			mod->arch.plt_idx.shdr = sechdrs + i;
 		else if (!strcmp(secstrings + sechdrs[i].sh_name, ".got"))
 			mod->arch.got.shdr = sechdrs + i;
-		else if (sechdrs[i].sh_type == SHT_SYMTAB)
-			symtab = sechdrs + i;
 	}
 
 	if (!mod->arch.plt.shdr) {
@@ -127,22 +122,6 @@ int module_frob_arch_sections(Elf_Ehdr *ehdr, Elf_Shdr *sechdrs,
 		pr_err("%s: module GOT section(s) missing\n", mod->name);
 		return -ENOEXEC;
 	}
-
-	if (!symtab) {
-		pr_err("%s: module symbol table missing\n", mod->name);
-		return -ENOEXEC;
-	}
-
-	symbols = (void *) ehdr + symtab->sh_offset;
-	strings = (void *) ehdr + sechdrs[symtab->sh_link].sh_offset;
-
-	for (i = 0; i < symtab->sh_size / sizeof(Elf_Sym); i++)
-		if (symbols[i].st_shndx == SHN_UNDEF &&
-		    strcmp(strings + symbols[i].st_name,
-			   "_GLOBAL_OFFSET_TABLE_") == 0) {
-			symbols[i].st_shndx = mod->arch.got.shdr - sechdrs;
-			symbols[i].st_value = 0;
-		}
 
 	/* Calculate the maxinum number of entries */
 	for (i = 0; i < ehdr->e_shnum; i++) {

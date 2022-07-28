@@ -4,5 +4,5 @@ SECTIONS {
 	. = ALIGN(4);
 	.plt : { BYTE(0) }
 	.plt.idx : { BYTE(0) }
-	.got : { BYTE(0) }
+	.got : { HIDDEN(_GLOBAL_OFFSET_TABLE_ = .); BYTE(0) }
 }

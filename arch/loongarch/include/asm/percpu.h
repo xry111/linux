@@ -8,6 +8,16 @@
 #include <asm/cmpxchg.h>
 #include <asm/loongarch.h>
 
+/* Force GCC to load the "address" (offset from r21 in fact) of per-CPU
+   variables via GOT.  PC-relative address obviously won't work.  */
+#ifdef MODULE
+# if __has_attribute(__addr_global__)
+#  define PER_CPU_ATTRIBUTES __attribute__((__addr_global__))
+# else
+#  error "per-CPU variable in module is currently broken"
+# endif /* __addr_global__ */
+#endif /* MODULE */
+
 /* Use r21 for fast access */
 register unsigned long __my_cpu_offset __asm__("$r21");
 

@@ -8,6 +8,19 @@
 #include <asm/cmpxchg.h>
 #include <asm/loongarch.h>
 
+#if defined(MODULE) && defined(CONFIG_CC_HAS_EXPLICIT_RELOCS)
+# if __has_attribute(model)
+/* The "address" (in fact, offset from $r21) of a per-CPU variable is close
+ * to the load address of main kernel image, but far from where the modules are
+ * loaded.  Tell the compiler this fact.
+ */
+#  define PER_CPU_ATTRIBUTES __attribute__((model("extreme")))
+# else /* __has_attribute(model) */
+/* This should only happen with early GCC 13 snapshots. */
+#  error "Compiler with explicit relocs but no model attribute is not supported"
+# endif /* __has_attribute(model) */
+#endif
+
 /* Use r21 for fast access */
 register unsigned long __my_cpu_offset __asm__("$r21");
 

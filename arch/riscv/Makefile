@@ -139,7 +139,7 @@ else
 KBUILD_IMAGE := $(boot)/Image.gz
 endif
 endif
-BOOT_TARGETS := Image Image.gz loader loader.bin xipImage
+BOOT_TARGETS := Image Image.gz loader loader.bin xipImage vmlinuz.efi
 
 all:	$(notdir $(KBUILD_IMAGE))
 

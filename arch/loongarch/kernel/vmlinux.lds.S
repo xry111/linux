@@ -74,6 +74,8 @@ SECTIONS
 		EXIT_DATA
 	}
 
+       .rela.dyn : { *(.rela.dyn) *(.rela*) }
+
 #ifdef CONFIG_SMP
 	PERCPU_SECTION(1 << CONFIG_L1_CACHE_SHIFT)
 #endif

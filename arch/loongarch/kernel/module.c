@@ -281,6 +281,38 @@ static int apply_r_larch_add_sub(struct module *mod, u32 *location, Elf_Addr v,
 	}
 }
 
+static int apply_r_larch_b26(struct module *mod, u32 *location, Elf_Addr v,
+			s64 *rela_stack, size_t *rela_stack_top, unsigned int type)
+{
+	ptrdiff_t offset = (void *)v - (void *)location;
+	union loongarch_instruction *insn = (union loongarch_instruction *)location;
+
+	if (offset >= SZ_128M)
+		v = module_emit_plt_entry(mod, v);
+
+	if (offset < -SZ_128M)
+		v = module_emit_plt_entry(mod, v);
+
+	offset = (void *)v - (void *)location;
+
+	if (offset & 3) {
+		pr_err("module %s: jump offset = 0x%llx unaligned! dangerous R_LARCH_B26 (%u) relocation\n",
+				mod->name, (long long)offset, type);
+		return -ENOEXEC;
+	}
+
+	if (!signed_imm_check(offset, 28)) {
+		pr_err("module %s: jump offset = 0x%llx overflow! dangerous R_LARCH_B26 (%u) relocation\n",
+				mod->name, (long long)offset, type);
+		return -ENOEXEC;
+	}
+
+	offset >>= 2;
+	insn->reg0i26_format.immediate_l = offset & 0xffff;
+	insn->reg0i26_format.immediate_h = (offset >> 16) & 0x3ff;
+	return 0;
+}
+
 /*
  * reloc_handlers_rela() - Apply a particular relocation to a module
  * @mod: the module to apply the reloc to
@@ -310,6 +342,7 @@ static reloc_rela_handler reloc_rela_handlers[] = {
 	[R_LARCH_SOP_SUB ... R_LARCH_SOP_IF_ELSE] 	     = apply_r_larch_sop,
 	[R_LARCH_SOP_POP_32_S_10_5 ... R_LARCH_SOP_POP_32_U] = apply_r_larch_sop_imm_field,
 	[R_LARCH_ADD32 ... R_LARCH_SUB64]		     = apply_r_larch_add_sub,
+	[R_LARCH_B26]					     = apply_r_larch_b26,
 };
 
 int apply_relocate_add(Elf_Shdr *sechdrs, const char *strtab,

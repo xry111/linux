@@ -40,10 +40,23 @@ endif
 
 cflags-y			+= -G0 -pipe -msoft-float
 LDFLAGS_vmlinux			+= -G0 -static -n -nostdlib
+
+ifdef CONFIG_CC_HAS_EXPLICIT_RELOCS
+# GCC may have -mexplicit-relocs off by default if it was built with an old
+# assembler.  But with CONFIG_CC_HAS_EXPLICIT_RELOCS we are sure explicit
+# relocation hints are supported by the assembler, so force it.
+cflags-y			+= -mexplicit-relocs
+else
+# Likewise, disable -mexplicit-relocs if GCC enables by default but the
+# assembler does not support it.
+cflags-y			+= $(call cc-option,-mno-explicit-relocs)
+# With -mno-explicit-relocs, use assembler options to adjust code generation
+# for symbol address.
 KBUILD_AFLAGS_KERNEL		+= -Wa,-mla-global-with-pcrel
 KBUILD_CFLAGS_KERNEL		+= -Wa,-mla-global-with-pcrel
 KBUILD_AFLAGS_MODULE		+= -Wa,-mla-global-with-abs
-KBUILD_CFLAGS_MODULE		+= -fplt -Wa,-mla-global-with-abs,-mla-local-with-abs
+KBUILD_CFLAGS_MODULE		+= -Wa,-mla-global-with-abs,-mla-local-with-abs
+endif
 
 cflags-y += -ffreestanding
 cflags-y += $(call cc-option, -mno-check-zero-division)

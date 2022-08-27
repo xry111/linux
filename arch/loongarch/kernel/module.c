@@ -313,6 +313,41 @@ static int apply_r_larch_b26(struct module *mod, u32 *location, Elf_Addr v,
 	return 0;
 }
 
+static int apply_r_larch_abs(struct module *mod, u32 *location, Elf_Addr v,
+			s64 *rela_stack, size_t *rela_stack_top, unsigned int type)
+{
+	union loongarch_instruction *insn = (union loongarch_instruction *)location;
+
+	switch (type) {
+	case R_LARCH_ABS_HI20:
+		v >>= 12;
+		break;
+	case R_LARCH_ABS64_LO20:
+		v >>= 32;
+		break;
+	case R_LARCH_ABS64_HI12:
+		v >>= 52;
+		break;
+	default:
+		/* Do nothing. */
+	}
+
+	switch (type) {
+	case R_LARCH_ABS_HI20:
+	case R_LARCH_ABS64_LO20:
+		insn->reg1i20_format.immediate = v & 0xfffff;
+		break;
+	case R_LARCH_ABS_LO12:
+	case R_LARCH_ABS64_HI12:
+		insn->reg2i12_format.immediate = v & 0xfff;
+		break;
+	default:
+		pr_err("%s: Unsupport relocation type %u\n", mod->name, type);
+		return -EINVAL;
+	}
+
+	return 0;
+}
 /*
  * reloc_handlers_rela() - Apply a particular relocation to a module
  * @mod: the module to apply the reloc to
@@ -343,6 +378,7 @@ static reloc_rela_handler reloc_rela_handlers[] = {
 	[R_LARCH_SOP_POP_32_S_10_5 ... R_LARCH_SOP_POP_32_U] = apply_r_larch_sop_imm_field,
 	[R_LARCH_ADD32 ... R_LARCH_SUB64]		     = apply_r_larch_add_sub,
 	[R_LARCH_B26]					     = apply_r_larch_b26,
+	[R_LARCH_ABS_HI20...R_LARCH_ABS64_HI12]		     = apply_r_larch_abs,
 };
 
 int apply_relocate_add(Elf_Shdr *sechdrs, const char *strtab,

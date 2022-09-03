@@ -60,6 +60,7 @@ extern asmlinkage void handle_lasx(void);
 extern asmlinkage void handle_reserved(void);
 extern asmlinkage void handle_watch(void);
 extern asmlinkage void handle_vint(void);
+extern asmlinkage void handler_trampoline(void);
 
 static void show_backtrace(struct task_struct *task, const struct pt_regs *regs,
 			   const char *loglvl, bool user)
@@ -677,7 +678,8 @@ void per_cpu_trap_init(int cpu)
 /* Install CPU exception handler */
 void set_handler(unsigned long offset, void *addr, unsigned long size)
 {
-	memcpy((void *)(eentry + offset), addr, size);
+	memcpy((void *)(eentry + offset), &handler_trampoline, 24);
+	memcpy((void *)(eentry + offset + 24), &addr, 8);
 	local_flush_icache_range(eentry + offset, eentry + offset + size);
 }
 

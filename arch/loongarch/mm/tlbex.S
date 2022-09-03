@@ -27,7 +27,7 @@
 	tlb_do_page_fault 1
 
 SYM_FUNC_START(handle_tlb_protect)
-	BACKUP_T0T1
+	# BACKUP_T0T1
 	SAVE_ALL
 	move	a0, sp
 	move	a1, zero
@@ -39,8 +39,8 @@ SYM_FUNC_START(handle_tlb_protect)
 SYM_FUNC_END(handle_tlb_protect)
 
 SYM_FUNC_START(handle_tlb_load)
-	csrwr	t0, EXCEPTION_KS0
-	csrwr	t1, EXCEPTION_KS1
+	#csrwr	t0, EXCEPTION_KS0
+	#csrwr	t1, EXCEPTION_KS1
 	csrwr	ra, EXCEPTION_KS2
 
 	/*
@@ -202,8 +202,8 @@ nopage_tlb_load:
 SYM_FUNC_END(handle_tlb_load)
 
 SYM_FUNC_START(handle_tlb_store)
-	csrwr	t0, EXCEPTION_KS0
-	csrwr	t1, EXCEPTION_KS1
+	#csrwr	t0, EXCEPTION_KS0
+	#csrwr	t1, EXCEPTION_KS1
 	csrwr	ra, EXCEPTION_KS2
 
 	/*
@@ -370,8 +370,8 @@ nopage_tlb_store:
 SYM_FUNC_END(handle_tlb_store)
 
 SYM_FUNC_START(handle_tlb_modify)
-	csrwr	t0, EXCEPTION_KS0
-	csrwr	t1, EXCEPTION_KS1
+	#csrwr	t0, EXCEPTION_KS0
+	#csrwr	t1, EXCEPTION_KS1
 	csrwr	ra, EXCEPTION_KS2
 
 	/*

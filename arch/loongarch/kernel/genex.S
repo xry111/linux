@@ -32,7 +32,7 @@ SYM_FUNC_START(__arch_cpu_idle)
 SYM_FUNC_END(__arch_cpu_idle)
 
 SYM_FUNC_START(handle_vint)
-	BACKUP_T0T1
+	# BACKUP_T0T1
 	SAVE_ALL
 	la.abs	t1, __arch_cpu_idle
 	LONG_L	t0, sp, PT_ERA
@@ -67,7 +67,7 @@ SYM_FUNC_END(except_vec_cex)
 	.macro	BUILD_HANDLER exception handler prep
 	.align	5
 	SYM_FUNC_START(handle_\exception)
-	BACKUP_T0T1
+	# BACKUP_T0T1
 	SAVE_ALL
 	build_prep_\prep
 	move	a0, sp
@@ -93,3 +93,12 @@ SYM_FUNC_START(handle_sys)
 	la.abs	t0, handle_syscall
 	jr	t0
 SYM_FUNC_END(handle_sys)
+
+SYM_FUNC_START(handler_trampoline)
+	csrwr	t0, EXCEPTION_KS0
+	csrwr	t1, EXCEPTION_KS1
+	pcaddi	t0, 0
+	ld.d	t0, t0, 16
+	jr	t0
+	nop
+SYM_FUNC_END(handler_trampoline)

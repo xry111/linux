@@ -76,8 +76,8 @@
  * kernelsp array for it. It stores the current sp in t0 and loads the
  * new value in sp.
  */
-	.macro	get_saved_sp docfi=0
-	la.abs	  t1, kernelsp
+	.macro	  get_saved_sp docfi=0
+	la.pcrel  t1, kernelsp
 #ifdef CONFIG_SMP
 	csrrd	  t0, PERCPU_BASE_KS
 	LONG_ADD  t1, t1, t0
@@ -89,8 +89,8 @@
 	LONG_L	  sp, t1, 0
 	.endm
 
-	.macro	set_saved_sp stackp temp temp2
-	la.abs	  \temp, kernelsp
+	.macro	  set_saved_sp stackp temp temp2
+	la.pcrel  \temp, kernelsp
 #ifdef CONFIG_SMP
 	LONG_ADD  \temp, \temp, u0
 #endif

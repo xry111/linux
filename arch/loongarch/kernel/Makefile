@@ -19,6 +19,7 @@ obj-$(CONFIG_STACKTRACE)	+= stacktrace.o
 
 obj-$(CONFIG_KEXEC)		+= machine_kexec.o relocate_kernel.o
 obj-$(CONFIG_CRASH_DUMP)	+= crash_dump.o
+obj-$(CONFIG_RELOCATABLE)	+= relocate.o
 
 obj-$(CONFIG_PROC_FS)		+= proc.o
 

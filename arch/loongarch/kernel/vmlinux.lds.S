@@ -84,7 +84,11 @@ SECTIONS
 	PERCPU_SECTION(1 << CONFIG_L1_CACHE_SHIFT)
 #endif
 
-	.rela.dyn : ALIGN(8) { *(.rela.dyn) *(.rela*) }
+	.rela.dyn : ALIGN(8) {
+		__rela_dyn_start = .;
+		 *(.rela.dyn) *(.rela*)
+		__rela_dyn_end = .;
+	}
 
 	.init.bss : {
 		*(.init.bss)

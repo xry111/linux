@@ -94,8 +94,7 @@ efi_status_t efi_boot_kernel(void *handle, efi_loaded_image_t *image,
 	csr_write64(CSR_DMW0_INIT, LOONGARCH_CSR_DMWIN0);
 	csr_write64(CSR_DMW1_INIT, LOONGARCH_CSR_DMWIN1);
 
-	real_kernel_entry = (kernel_entry_t)
-		((unsigned long)&kernel_entry - kernel_addr + VMLINUX_LOAD_ADDRESS);
+	real_kernel_entry = (kernel_entry_t) kernel_entry;
 
 	real_kernel_entry(true, (unsigned long)cmdline_ptr,
 			  (unsigned long)efi_system_table);

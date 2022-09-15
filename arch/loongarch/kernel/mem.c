@@ -5,6 +5,7 @@
 #include <linux/efi.h>
 #include <linux/initrd.h>
 #include <linux/memblock.h>
+#include <linux/of_fdt.h>
 
 #include <asm/bootinfo.h>
 #include <asm/loongson.h>
@@ -61,4 +62,9 @@ void __init memblock_init(void)
 
 	/* Reserve the initrd */
 	reserve_initrd_mem();
+
+	/* Main reserved memory for the elf core head */
+	early_init_fdt_scan_reserved_mem();
+	/* Parse linux,usable-memory-range for crash dump kernel */
+	early_init_dt_check_for_usable_mem_range();
 }

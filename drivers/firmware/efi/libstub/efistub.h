@@ -867,7 +867,6 @@ efi_status_t efi_exit_boot_services(void *handle, void *priv,
 
 efi_status_t allocate_new_fdt_and_exit_boot(void *handle,
 					    unsigned long *new_fdt_addr,
-					    u64 initrd_addr, u64 initrd_size,
 					    char *cmdline_ptr,
 					    unsigned long fdt_addr,
 					    unsigned long fdt_size);
@@ -944,8 +943,6 @@ static inline efi_status_t efi_load_dtb(efi_loaded_image_t *image,
 }
 
 efi_status_t efi_load_initrd(efi_loaded_image_t *image,
-			     unsigned long *load_addr,
-			     unsigned long *load_size,
 			     unsigned long soft_limit,
 			     unsigned long hard_limit);
 /*

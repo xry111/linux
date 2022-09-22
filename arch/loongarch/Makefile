@@ -67,7 +67,7 @@ KBUILD_CFLAGS_MODULE		+= -fplt -Wa,-mla-global-with-abs,-mla-local-with-abs
 endif
 
 ifeq ($(CONFIG_RELOCATABLE),y)
-LDFLAGS_vmlinux			+= -shared -Bsymbolic -z notext -z norelro
+LDFLAGS_vmlinux			+= -static -pie --no-dynamic-linker -z notext
 KBUILD_CFLAGS_KERNEL		+= -fPIE
 endif
 

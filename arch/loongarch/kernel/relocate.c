@@ -128,9 +128,10 @@ void *__init relocate_kernel(void)
 	int res = 1;
 	/* Default to original kernel entry point */
 	void *kernel_entry = start_kernel;
+	char *cmdline = early_ioremap(fw_arg1, COMMAND_LINE_SIZE);
 
-	/* Boot command line was passed in FDT */
-	early_init_dt_scan(early_ioremap(fw_arg1, SZ_64K));
+	/* Boot command line was passed in fw_arg1 */
+	strscpy(boot_command_line, cmdline, COMMAND_LINE_SIZE);
 
 	kernel_length = (long)(_end) - (long)(_text);
 

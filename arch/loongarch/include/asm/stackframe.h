@@ -217,4 +217,12 @@
 	RESTORE_SP_AND_RET \docfi
 	.endm
 
+/* Jump to the virtual address of the link. */
+	.macro JUMP_LINK_ADDR
+	li.d	t0, CACHE_BASE
+	pcaddi	t1, 0
+	or	t0, t0, t1
+	jirl	zero, t0, 0xc
+	.endm
+
 #endif /* _ASM_STACKFRAME_H */

@@ -34,7 +34,7 @@ SYM_FUNC_END(__arch_cpu_idle)
 SYM_FUNC_START(handle_vint)
 	BACKUP_T0T1
 	SAVE_ALL
-	la.abs	t1, __arch_cpu_idle
+0:	la.pcrel t1, t2, __arch_cpu_idle
 	LONG_L	t0, sp, PT_ERA
 	/* 32 byte rollback region */
 	ori	t0, t0, 0x1f
@@ -43,10 +43,24 @@ SYM_FUNC_START(handle_vint)
 	LONG_S	t0, sp, PT_ERA
 1:	move	a0, sp
 	move	a1, sp
-	la.abs	t0, do_vint
+2:	la.pcrel t0, t2, do_vint
 	jirl	ra, t0, 0
 	RESTORE_ALL_AND_RET
 SYM_FUNC_END(handle_vint)
+
+SYM_DATA_START(rel_handle_vint)
+LONG	3
+
+LONG	514b - handle_vint
+LONG	kernelsp
+
+LONG	0b - handle_vint
+LONG	__arch_cpu_idle
+
+LONG	2b - handle_vint
+LONG	do_vint
+
+SYM_DATA_END(rel_handle_vint)
 
 SYM_FUNC_START(except_vec_cex)
 	b	cache_parity_error
@@ -72,12 +86,24 @@ SYM_FUNC_END(except_vec_cex)
 	SAVE_ALL
 	build_prep_\prep
 	move	a0, sp
-	la.abs	t0, do_\handler
+	667:
+	la.pcrel t0, t1, do_\handler
 	jirl	ra, t0, 0
 	668:
 	RESTORE_ALL_AND_RET
 	SYM_FUNC_END(handle_\exception)
 	SYM_DATA(unwind_hint_\exception, .word 668b - 666b)
+
+	SYM_DATA_START(rel_handle_\exception)
+	LONG	2
+
+	LONG	514b - 666b
+	LONG	kernelsp
+
+	LONG	667b - 666b
+	LONG	do_\handler
+
+	SYM_DATA_END(rel_handle_\exception)
 	.endm
 
 	BUILD_HANDLER ade ade badv
@@ -93,6 +119,12 @@ SYM_FUNC_END(except_vec_cex)
 	BUILD_HANDLER reserved reserved none	/* others */
 
 SYM_FUNC_START(handle_sys)
-	la.abs	t0, handle_syscall
+	la.pcrel t0, t1, handle_syscall
 	jr	t0
 SYM_FUNC_END(handle_sys)
+
+SYM_DATA_START(rel_handle_sys)
+LONG	1
+LONG	0
+LONG	handle_syscall
+SYM_DATA_END(rel_handle_sys)

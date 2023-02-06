@@ -39,10 +39,20 @@ SYM_FUNC_START(handle_tlb_protect)
 	move		a1, zero
 	csrrd		a2, LOONGARCH_CSR_BADV
 	REG_S		a2, sp, PT_BVADDR
-	la.abs		t0, do_page_fault
+1:	la.pcrel	t0, t1, do_page_fault
 	jirl		ra, t0, 0
 	RESTORE_ALL_AND_RET
 SYM_FUNC_END(handle_tlb_protect)
+
+SYM_DATA_START(rel_handle_tlb_protect)
+	LONG	2
+
+	LONG	514b - handle_tlb_protect
+	LONG	kernelsp
+
+	LONG	1b - handle_tlb_protect
+	LONG	do_page_fault
+SYM_DATA_END(rel_handle_tlb_protect)
 
 SYM_FUNC_START(handle_tlb_load)
 	csrwr		t0, EXCEPTION_KS0
@@ -115,7 +125,8 @@ smp_pgtable_change_load:
 
 #ifdef CONFIG_64BIT
 vmalloc_load:
-	la.abs		t1, swapper_pg_dir
+	/* The first insn of vmalloc_done_load overwrites ra */
+1:	la.pcrel	t1, ra, swapper_pg_dir
 	b		vmalloc_done_load
 #endif
 
@@ -186,9 +197,23 @@ tlb_huge_update_load:
 nopage_tlb_load:
 	dbar		0
 	csrrd		ra, EXCEPTION_KS2
-	la.abs		t0, tlb_do_page_fault_0
+2:	la.pcrel	t0, t1, tlb_do_page_fault_0
 	jr		t0
 SYM_FUNC_END(handle_tlb_load)
+
+SYM_DATA_START(rel_handle_tlb_load)
+#ifdef CONFIG_64BIT
+	LONG	2
+
+	LONG	1b - handle_tlb_load
+	LONG	swapper_pg_dir
+#else
+	LONG	1
+#endif
+
+	LONG	2b - handle_tlb_load
+	LONG	tlb_do_page_fault_0
+SYM_DATA_END(rel_handle_tlb_load)
 
 SYM_FUNC_START(handle_tlb_store)
 	csrwr		t0, EXCEPTION_KS0
@@ -262,7 +287,8 @@ smp_pgtable_change_store:
 
 #ifdef CONFIG_64BIT
 vmalloc_store:
-	la.abs		t1, swapper_pg_dir
+	/* The first insn of vmalloc_done_store overwrites ra */
+1:	la.pcrel	t1, ra, swapper_pg_dir
 	b		vmalloc_done_store
 #endif
 
@@ -335,9 +361,23 @@ tlb_huge_update_store:
 nopage_tlb_store:
 	dbar		0
 	csrrd		ra, EXCEPTION_KS2
-	la.abs		t0, tlb_do_page_fault_1
+2:	la.pcrel	t0, t1, tlb_do_page_fault_1
 	jr		t0
 SYM_FUNC_END(handle_tlb_store)
+
+SYM_DATA_START(rel_handle_tlb_store)
+#ifdef CONFIG_64BIT
+	LONG	2
+
+	LONG	1b - handle_tlb_store
+	LONG	swapper_pg_dir
+#else
+	LONG	1
+#endif
+
+	LONG	2b - handle_tlb_store
+	LONG	tlb_do_page_fault_1
+SYM_DATA_END(rel_handle_tlb_store)
 
 SYM_FUNC_START(handle_tlb_modify)
 	csrwr		t0, EXCEPTION_KS0
@@ -410,7 +450,8 @@ smp_pgtable_change_modify:
 
 #ifdef CONFIG_64BIT
 vmalloc_modify:
-	la.abs		t1, swapper_pg_dir
+	/* The first insn of vmalloc_done_modify overwrites ra */
+1:	la.pcrel	t1, ra, swapper_pg_dir
 	b		vmalloc_done_modify
 #endif
 
@@ -482,9 +523,23 @@ tlb_huge_update_modify:
 nopage_tlb_modify:
 	dbar		0
 	csrrd		ra, EXCEPTION_KS2
-	la.abs		t0, tlb_do_page_fault_1
+2:	la.pcrel	t0, t1, tlb_do_page_fault_1
 	jr		t0
 SYM_FUNC_END(handle_tlb_modify)
+
+SYM_DATA_START(rel_handle_tlb_modify)
+#ifdef CONFIG_64BIT
+	LONG	2
+
+	LONG	1b - handle_tlb_modify
+	LONG	swapper_pg_dir
+#else
+	LONG	1
+#endif
+
+	LONG	2b - handle_tlb_modify
+	LONG	tlb_do_page_fault_1
+SYM_DATA_END(rel_handle_tlb_modify)
 
 SYM_FUNC_START(handle_tlb_refill)
 	csrwr		t0, LOONGARCH_CSR_TLBRSAVE

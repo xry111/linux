@@ -62,6 +62,107 @@ extern asmlinkage void handle_reserved(void);
 extern asmlinkage void handle_watch(void);
 extern asmlinkage void handle_vint(void);
 
+struct handler_reloc_entry {
+	unsigned long offset;
+	unsigned long sym;
+};
+
+struct handler_reloc {
+	unsigned long cnt;
+	struct handler_reloc_entry entries[];
+};
+
+extern struct handler_reloc rel_handle_tlb_load;
+extern struct handler_reloc rel_handle_tlb_store;
+extern struct handler_reloc rel_handle_tlb_modify;
+extern struct handler_reloc rel_handle_tlb_protect;
+extern struct handler_reloc rel_handle_ade;
+extern struct handler_reloc rel_handle_ale;
+extern struct handler_reloc rel_handle_sys;
+extern struct handler_reloc rel_handle_bp;
+extern struct handler_reloc rel_handle_ri;
+extern struct handler_reloc rel_handle_fpu;
+extern struct handler_reloc rel_handle_lsx;
+extern struct handler_reloc rel_handle_lasx;
+extern struct handler_reloc rel_handle_fpe;
+extern struct handler_reloc rel_handle_lbt;
+extern struct handler_reloc rel_handle_watch;
+extern struct handler_reloc rel_handle_reserved;
+extern struct handler_reloc rel_handle_vint;
+
+struct handler_reloc *eentry_reloc[128] = {
+	[0] = NULL, /* merr handler */
+	[EXCCODE_TLBL] = &rel_handle_tlb_load,
+	[EXCCODE_TLBS] = &rel_handle_tlb_store,
+	[EXCCODE_TLBI] = &rel_handle_tlb_load,
+	[EXCCODE_TLBM] = &rel_handle_tlb_modify,
+	[EXCCODE_TLBNR] = &rel_handle_tlb_protect,
+	[EXCCODE_TLBNX] = &rel_handle_tlb_protect,
+	[EXCCODE_TLBPE] = &rel_handle_tlb_protect,
+	[EXCCODE_ADE] = &rel_handle_ade,
+	[EXCCODE_ALE] = &rel_handle_ale,
+	[EXCCODE_SYS] = &rel_handle_sys,
+	[EXCCODE_BP] = &rel_handle_bp,
+	[EXCCODE_INE] = &rel_handle_ri,
+	[EXCCODE_IPE] = &rel_handle_ri,
+	[EXCCODE_FPDIS] = &rel_handle_fpu,
+	[EXCCODE_LSXDIS] = &rel_handle_lsx,
+	[EXCCODE_LASXDIS] = &rel_handle_lasx,
+	[EXCCODE_FPE] = &rel_handle_fpe,
+	[EXCCODE_BTDIS] = &rel_handle_lbt,
+	[EXCCODE_WATCH] = &rel_handle_watch,
+	[(EXCCODE_WATCH + 1) ... (EXCCODE_INT_START - 1)] = &rel_handle_reserved,
+	[EXCCODE_INT_START ... (EXCCODE_INT_END - 1)] = &rel_handle_vint,
+};
+
+void reloc_handler(unsigned long handler, struct handler_reloc *rel)
+{
+	if (!rel)
+		return;
+
+	for (unsigned long i = 0; i < rel->cnt; i++) {
+		unsigned long pc = handler + rel->entries[i].offset;
+		unsigned long v = rel->entries[i].sym;
+		/* Use s32 for a sign-extension deliberately. */
+		s32 offset_hi20 = (void *)((v + 0x800) & ~0xfff) -
+				  (void *)(pc & ~0xfff);
+		unsigned long anchor = (pc & ~0xfff) + offset_hi20;
+		ptrdiff_t offset_rem = (void *)v - (void *)anchor;
+		union loongarch_instruction *insn =
+			(union loongarch_instruction *)pc;
+
+		insn[1].reg2i12_format.immediate = v & 0xfff;
+		v = offset_hi20 >> 12;
+		insn[0].reg1i20_format.immediate = v & 0xfffff;
+		v = offset_rem >> 32;
+		insn[2].reg1i20_format.immediate = v & 0xfffff;
+		v = offset_rem >> 52;
+		insn[3].reg2i12_format.immediate = v & 0xfff;
+	}
+}
+
+/* Install CPU exception handler */
+static void do_set_handler(unsigned long exccode, void *addr,
+			   struct handler_reloc *rel)
+{
+	unsigned long dest_addr = eentry + exccode * VECSIZE;
+
+	memcpy((void *)dest_addr, addr, VECSIZE);
+	reloc_handler(dest_addr, rel);
+	local_flush_icache_range(dest_addr, dest_addr + VECSIZE);
+}
+
+/* Install CPU exception handler, with the reloc table from eentry_reloc */
+void set_handler(unsigned long exccode, void *addr)
+{
+	do_set_handler(exccode, addr, eentry_reloc[exccode]);
+}
+
+static void set_handler_reserved(unsigned long exccode)
+{
+	do_set_handler(exccode, handle_reserved, &rel_handle_reserved);
+}
+
 static void show_backtrace(struct task_struct *task, const struct pt_regs *regs,
 			   const char *loglvl, bool user)
 {
@@ -704,17 +805,10 @@ void per_cpu_trap_init(int cpu)
 	/* Initialise exception handlers */
 	if (cpu == 0)
 		for (i = 0; i < 64; i++)
-			set_handler(i * VECSIZE, handle_reserved, VECSIZE);
+			set_handler_reserved(i);
 
 	tlb_init(cpu);
 	cpu_cache_init();
-}
-
-/* Install CPU exception handler */
-void set_handler(unsigned long offset, void *addr, unsigned long size)
-{
-	memcpy((void *)(eentry + offset), addr, size);
-	local_flush_icache_range(eentry + offset, eentry + offset + size);
 }
 
 static const char panic_null_cerr[] =
@@ -741,20 +835,20 @@ void __init trap_init(void)
 
 	/* Set interrupt vector handler */
 	for (i = EXCCODE_INT_START; i < EXCCODE_INT_END; i++)
-		set_handler(i * VECSIZE, handle_vint, VECSIZE);
+		set_handler(i, handle_vint);
 
-	set_handler(EXCCODE_ADE * VECSIZE, handle_ade, VECSIZE);
-	set_handler(EXCCODE_ALE * VECSIZE, handle_ale, VECSIZE);
-	set_handler(EXCCODE_SYS * VECSIZE, handle_sys, VECSIZE);
-	set_handler(EXCCODE_BP * VECSIZE, handle_bp, VECSIZE);
-	set_handler(EXCCODE_INE * VECSIZE, handle_ri, VECSIZE);
-	set_handler(EXCCODE_IPE * VECSIZE, handle_ri, VECSIZE);
-	set_handler(EXCCODE_FPDIS * VECSIZE, handle_fpu, VECSIZE);
-	set_handler(EXCCODE_LSXDIS * VECSIZE, handle_lsx, VECSIZE);
-	set_handler(EXCCODE_LASXDIS * VECSIZE, handle_lasx, VECSIZE);
-	set_handler(EXCCODE_FPE * VECSIZE, handle_fpe, VECSIZE);
-	set_handler(EXCCODE_BTDIS * VECSIZE, handle_lbt, VECSIZE);
-	set_handler(EXCCODE_WATCH * VECSIZE, handle_watch, VECSIZE);
+	set_handler(EXCCODE_ADE, handle_ade);
+	set_handler(EXCCODE_ALE, handle_ale);
+	set_handler(EXCCODE_SYS, handle_sys);
+	set_handler(EXCCODE_BP, handle_bp);
+	set_handler(EXCCODE_INE, handle_ri);
+	set_handler(EXCCODE_IPE, handle_ri);
+	set_handler(EXCCODE_FPDIS, handle_fpu);
+	set_handler(EXCCODE_LSXDIS, handle_lsx);
+	set_handler(EXCCODE_LASXDIS, handle_lasx);
+	set_handler(EXCCODE_FPE, handle_fpe);
+	set_handler(EXCCODE_BTDIS, handle_lbt);
+	set_handler(EXCCODE_WATCH, handle_watch);
 
 	cache_error_setup();
 

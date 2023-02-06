@@ -253,7 +253,6 @@ static void output_pgtable_bits_defines(void)
 #ifdef CONFIG_NUMA
 unsigned long pcpu_handlers[NR_CPUS];
 #endif
-extern long exception_handlers[VECSIZE * 128 / sizeof(long)];
 
 void setup_tlb_handler(int cpu)
 {
@@ -264,19 +263,20 @@ void setup_tlb_handler(int cpu)
 	if (cpu == 0) {
 		memcpy((void *)tlbrentry, handle_tlb_refill, 0x80);
 		local_flush_icache_range(tlbrentry, tlbrentry + 0x80);
-		set_handler(EXCCODE_TLBI * VECSIZE, handle_tlb_load, VECSIZE);
-		set_handler(EXCCODE_TLBL * VECSIZE, handle_tlb_load, VECSIZE);
-		set_handler(EXCCODE_TLBS * VECSIZE, handle_tlb_store, VECSIZE);
-		set_handler(EXCCODE_TLBM * VECSIZE, handle_tlb_modify, VECSIZE);
-		set_handler(EXCCODE_TLBNR * VECSIZE, handle_tlb_protect, VECSIZE);
-		set_handler(EXCCODE_TLBNX * VECSIZE, handle_tlb_protect, VECSIZE);
-		set_handler(EXCCODE_TLBPE * VECSIZE, handle_tlb_protect, VECSIZE);
+		set_handler(EXCCODE_TLBI, handle_tlb_load);
+		set_handler(EXCCODE_TLBL, handle_tlb_load);
+		set_handler(EXCCODE_TLBS, handle_tlb_store);
+		set_handler(EXCCODE_TLBM, handle_tlb_modify);
+		set_handler(EXCCODE_TLBNR, handle_tlb_protect);
+		set_handler(EXCCODE_TLBNX, handle_tlb_protect);
+		set_handler(EXCCODE_TLBPE, handle_tlb_protect);
 	}
 #ifdef CONFIG_NUMA
 	else {
 		void *addr;
+		unsigned long addr_ul;
 		struct page *page;
-		const int vec_sz = sizeof(exception_handlers);
+		const int vec_sz = VECSIZE * 128;
 
 		if (pcpu_handlers[cpu])
 			return;
@@ -286,8 +286,11 @@ void setup_tlb_handler(int cpu)
 			return;
 
 		addr = page_address(page);
+		addr_ul = (unsigned long)addr;
 		pcpu_handlers[cpu] = (unsigned long)addr;
-		memcpy((void *)addr, (void *)eentry, vec_sz);
+		memcpy(addr, (void *)eentry, vec_sz);
+		for (unsigned long i = 0; i < 128; i++)
+			reloc_handler(addr_ul + i * VECSIZE, eentry_reloc[i]);
 		local_flush_icache_range((unsigned long)addr, (unsigned long)addr + vec_sz);
 		csr_write64(pcpu_handlers[cpu], LOONGARCH_CSR_EENTRY);
 		csr_write64(pcpu_handlers[cpu], LOONGARCH_CSR_MERRENTRY);

@@ -20,7 +20,7 @@
 	.align	5
 SYM_FUNC_START(handle_syscall)
 	csrrd	t0, PERCPU_BASE_KS
-	la.abs	t1, kernelsp
+	la.pcrel	t1, kernelsp
 	add.d	t1, t1, t0
 	move	t2, sp
 	ld.d	sp, t1, 0

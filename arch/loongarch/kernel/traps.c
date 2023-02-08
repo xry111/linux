@@ -122,22 +122,39 @@ void reloc_handler(unsigned long handler, struct handler_reloc *rel)
 
 	for (unsigned long i = 0; i < rel->cnt; i++) {
 		unsigned long pc = handler + rel->entries[i].offset;
-		unsigned long v = rel->entries[i].sym;
-		/* Use s32 for a sign-extension deliberately. */
-		s32 offset_hi20 = (void *)((v + 0x800) & ~0xfff) -
-				  (void *)(pc & ~0xfff);
-		unsigned long anchor = (pc & ~0xfff) + offset_hi20;
-		ptrdiff_t offset_rem = (void *)v - (void *)anchor;
 		union loongarch_instruction *insn =
 			(union loongarch_instruction *)pc;
+		u32 imm[4];
+		unsigned long v = rel->entries[i].sym;
 
-		insn[1].reg2i12_format.immediate = v & 0xfff;
-		v = offset_hi20 >> 12;
-		insn[0].reg1i20_format.immediate = v & 0xfffff;
-		v = offset_rem >> 32;
-		insn[2].reg1i20_format.immediate = v & 0xfffff;
-		v = offset_rem >> 52;
-		insn[3].reg2i12_format.immediate = v & 0xfff;
+		/* GNU ld > 2.40 uses pcalau12i for la.pcrel, but GNU ld <= 2.39
+		   uses pcaddu12i.  */
+		if (insn->reg1i20_format.opcode == pcalau12i_op) {
+			/* Use s32 deliberately for sign extension. */
+			s32 offset_hi20 = ((v + 0x800) & ~0xfff) -
+					  (pc & ~0xfff);
+			unsigned long anchor = (pc & ~0xfff) + offset_hi20;
+			unsigned long offset_rem = v - anchor;
+
+			imm[0] = (offset_hi20 >> 12) & 0xfffff;
+			imm[1] = v & 0xfff;
+			imm[2] = (offset_rem >> 32) & 0xfffff;
+			imm[3] = offset_rem >> 52;
+		} else if (insn->reg1i20_format.opcode == pcaddu12i_op) {
+			/* Use s32 deliberately for sign extension. */
+			s32 offset_lo = v - pc;
+			unsigned long offset_hi = v - pc - offset_lo;
+
+			imm[0] = (offset_lo >> 12) & 0xfffff;
+			imm[1] = offset_lo & 0xfff;
+			imm[2] = (offset_hi >> 32) & 0xfffff;
+			imm[3] = offset_hi >> 52;
+		}
+
+		insn[0].reg1i20_format.immediate = imm[0];
+		insn[1].reg2i12_format.immediate = imm[1];
+		insn[2].reg1i20_format.immediate = imm[2];
+		insn[3].reg2i12_format.immediate = imm[3];
 	}
 }
 

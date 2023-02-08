@@ -149,7 +149,9 @@ void reloc_handler(unsigned long handler, struct handler_reloc *rel)
 			imm[1] = offset_lo & 0xfff;
 			imm[2] = (offset_hi >> 32) & 0xfffff;
 			imm[3] = offset_hi >> 52;
-		}
+		} else
+		    panic("Cannot fixup la.pcrel for exception handler at %lu: "
+			  "unexpected instruction %d!", pc, insn->word);
 
 		insn[0].reg1i20_format.immediate = imm[0];
 		insn[1].reg2i12_format.immediate = imm[1];

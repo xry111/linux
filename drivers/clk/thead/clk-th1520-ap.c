@@ -965,6 +965,75 @@ static const struct regmap_config th1520_clk_regmap_config = {
 	.fast_io = true,
 };
 
+static void setup_cpu_freq(struct regmap *map)
+{
+	int ret;
+	unsigned int val;
+
+	ret = regmap_read(map, 0, &val);
+	if (ret) {
+		pr_err("%s: reading pll0_cfg0 failed\n", __func__);
+		return;
+	}
+
+	pr_info("%s: pll0_cfg0 is %x\n", __func__, val);
+
+	ret = regmap_read(map, 0x100, &val);
+	if (ret) {
+		pr_err("%s: reading c910_clk_cfg failed\n", __func__);
+		return;
+	}
+
+	pr_info("%s: c910_clk_cfg is %x\n", __func__, val);
+
+	/* Configure PLL0 to output 1500MHz first */
+	ret = regmap_write(map, 0, 0x1207d01);
+	udelay(1);
+
+	if (ret) {
+		pr_err("%s: writing pll0_cfg0 failed\n", __func__);
+		return;
+	}
+
+	ret = regmap_read(map, 0, &val);
+	if (ret) {
+		pr_err("%s: reading pll0_cfg0 failed\n", __func__);
+		return;
+	}
+
+	pr_info("%s: pll0_cfg0 is %x\n", __func__, val);
+
+	/* Enable bus clock divider to avoid overspeed */
+	ret = regmap_update_bits(map, 0x100, 1 << 11, 0);
+	if (ret) {
+		pr_err("%s: Disabling bus clock divider failed\n", __func__);
+		return;
+	}
+
+	udelay(1);
+
+	ret = regmap_update_bits(map, 0x100, 7 << 8, 1 << 8);
+	if (ret) {
+		pr_err("%s: Setting bus clock divider to 1:2 failed\n", __func__);
+		return;
+	}
+
+	udelay(1);
+
+	ret = regmap_update_bits(map, 0x100, 1 << 11, 1 << 11);
+	if (ret) {
+		pr_err("%s: Enabling bus clock divider failed\n", __func__);
+		return;
+	}
+
+	udelay(1);
+
+	/* Switch c910_cclk to use c910_cclk_i0 */
+	ret = regmap_update_bits(map, 0x100, 1, 0);
+	if (ret)
+		pr_err("%s: Switching c910_cclk to c910_cclk_i0 failed\n", __func__);
+}
+
 static int th1520_clk_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
@@ -1062,6 +1131,8 @@ static int th1520_clk_probe(struct platform_device *pdev)
 	ret = devm_of_clk_add_hw_provider(dev, of_clk_hw_onecell_get, priv);
 	if (ret)
 		return ret;
+
+	setup_cpu_freq(map);
 
 	return 0;
 }

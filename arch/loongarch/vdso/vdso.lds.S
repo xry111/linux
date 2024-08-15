@@ -69,6 +69,7 @@ VERSION
 		__vdso_clock_gettime;
 		__vdso_gettimeofday;
 		__vdso_rt_sigreturn;
+		__vdso_getrandom;
 	local: *;
 	};
 }

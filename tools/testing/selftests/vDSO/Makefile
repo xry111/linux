@@ -37,11 +37,13 @@ $(OUTPUT)/vdso_test_correctness: vdso_test_correctness.c
 $(OUTPUT)/vdso_test_correctness: LDFLAGS += -ldl
 
 $(OUTPUT)/vdso_test_getrandom: parse_vdso.c
-$(OUTPUT)/vdso_test_getrandom: CFLAGS += -isystem $(top_srcdir)/tools/include \
+$(OUTPUT)/vdso_test_getrandom: CFLAGS += $(KHDR_INCLUDES) \
+                                         -isystem $(top_srcdir)/tools/include \
                                          -isystem $(top_srcdir)/include/uapi
 
 $(OUTPUT)/vdso_test_chacha: $(top_srcdir)/arch/$(ARCH)/entry/vdso/vgetrandom-chacha.S
-$(OUTPUT)/vdso_test_chacha: CFLAGS += -idirafter $(top_srcdir)/tools/include \
+$(OUTPUT)/vdso_test_chacha: CFLAGS += $(KHDR_INCLUDES) \
+                                      -idirafter $(top_srcdir)/tools/include \
                                       -isystem $(top_srcdir)/arch/$(ARCH)/include \
                                       -isystem $(top_srcdir)/include \
                                       -D__ASSEMBLY__ -DBULID_VDSO -DCONFIG_FUNCTION_ALIGNMENT=0 \

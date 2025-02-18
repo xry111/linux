@@ -87,6 +87,7 @@
 #include <asm/mmu_context.h>
 #include <asm/mte.h>
 #include <asm/processor.h>
+#include <asm/ptrace.h>
 #include <asm/smp.h>
 #include <asm/sysreg.h>
 #include <asm/traps.h>
@@ -1189,7 +1190,7 @@ void __init init_cpu_features(struct cpuinfo_arm64 *info)
 		cpacr_restore(cpacr);
 	}
 
-	if (id_aa64pfr0_mpam(info->reg_id_aa64pfr0))
+	if (id_aa64pfr0_mpam(read_sanitised_ftr_reg(SYS_ID_AA64PFR0_EL1)))
 		init_cpu_ftr_reg(SYS_MPAMIDR_EL1, info->reg_mpamidr);
 
 	if (id_aa64pfr1_mte(info->reg_id_aa64pfr1))
@@ -1441,7 +1442,7 @@ void update_cpu_features(int cpu,
 		cpacr_restore(cpacr);
 	}
 
-	if (id_aa64pfr0_mpam(info->reg_id_aa64pfr0)) {
+	if (id_aa64pfr0_mpam(read_sanitised_ftr_reg(SYS_ID_AA64PFR0_EL1))) {
 		taint |= check_update_ftr_reg(SYS_MPAMIDR_EL1, cpu,
 					info->reg_mpamidr, boot->reg_mpamidr);
 	}
@@ -3948,4 +3949,22 @@ ssize_t cpu_show_meltdown(struct device *dev, struct device_attribute *attr,
 	default:
 		return sprintf(buf, "Vulnerable\n");
 	}
+}
+
+/* This is not done by the early el2 setup because we want to allow
+ * id_aa64pfr0.mpam=0 to disable MPAM initialization for buggy firmware
+ * which failed enable MPAM or emulate the trap as if it were disabled.
+ */
+void cpu_init_el2_mpam(void)
+{
+	u64 idr;
+
+	if (read_sysreg(CurrentEL) != CurrentEL_EL2 || !cpu_has_mpam())
+		return;
+
+	write_sysreg_s(0, SYS_MPAM2_EL2);
+
+	idr = read_sysreg_s(SYS_MPAMIDR_EL1);
+	if (idr & MPAMIDR_EL1_HAS_HCR)
+	    write_sysreg_s(0, SYS_MPAMHCR_EL2);
 }

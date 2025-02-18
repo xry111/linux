@@ -456,6 +456,8 @@ static void __cpuinfo_store_cpu_32bit(struct cpuinfo_32bit *info)
 
 static void __cpuinfo_store_cpu(struct cpuinfo_arm64 *info)
 {
+	u64 pfr0;
+
 	info->reg_cntfrq = arch_timer_get_cntfrq();
 	/*
 	 * Use the effective value of the CTR_EL0 than the raw value
@@ -494,7 +496,7 @@ static void __cpuinfo_store_cpu(struct cpuinfo_arm64 *info)
 	if (id_aa64pfr0_32bit_el0(info->reg_id_aa64pfr0))
 		__cpuinfo_store_cpu_32bit(&info->aarch32);
 
-	if (id_aa64pfr0_mpam(info->reg_id_aa64pfr0))
+	if (cpu_has_mpam())
 		info->reg_mpamidr = read_cpuid(MPAMIDR_EL1);
 
 	if (IS_ENABLED(CONFIG_ARM64_SME) &&

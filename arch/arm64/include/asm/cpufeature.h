@@ -1066,6 +1066,18 @@ static inline bool cpu_has_lpa2(void)
 #endif
 }
 
+static inline bool cpu_has_mpam(void)
+{
+	u64 pfr0 = read_sysreg_s(SYS_ID_AA64PFR0_EL1);
+
+	pfr0 &= ~id_aa64pfr0_override.mask;
+	pfr0 |= id_aa64pfr0_override.val;
+	return cpuid_feature_extract_unsigned_field(pfr0,
+						    ID_AA64PFR0_EL1_MPAM_SHIFT);
+}
+
+void cpu_init_el2_mpam(void);
+
 #endif /* __ASSEMBLY__ */
 
 #endif
